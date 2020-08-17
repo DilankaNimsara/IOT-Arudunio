@@ -269,9 +269,11 @@ void setup()
    gpsPort.listen();
   oled.clear();
   previous = millis();
+  
 }
 
 void loop(){
+
   int button=digitalRead(7);
   int button2=digitalRead(6);
  if(button==HIGH){
@@ -321,57 +323,29 @@ void loop(){
     previous = millis();
     SerialMonitor.println("Eveyr 1 miniute");
 
-     StaticJsonBuffer<100> jsonBuffer;
-  JsonObject& object = jsonBuffer.createObject();
+     StaticJsonDocument<60> jsonBuffer;
+//  JsonObject& object = jsonBuffer.createObject();
   double lats=double(tinyGPS.location.lat());
    double longs=double(tinyGPS.location.lng());
-   double spe=double(tinyGPS.speed.kmph());
-  object.set("Lat", lats);
-  object.set("Long", longs);
-  object.set("Speed",spe);
-//  String times=String(hour())+":"+String(minute())+":"+String(second());
-//  object.set("Time",times);
-//  
-  object.printTo(SerialMonitor);
+    mySIM.listen();
+  jsonBuffer["Lat"]= lats;
+  jsonBuffer["Long"]= longs;
+   String times=String(hour())+":"+String(minute())+":"+String(second());
+// times+="\n";;
+ jsonBuffer["Time"]= times;
+  jsonBuffer["Speed"]= tinyGPS.speed.kmph();
+
+  serializeJson(jsonBuffer, SerialMonitor);
   Serial.println(" ");  
-  String sendtoserver;
-  object.printTo(sendtoserver);
-  SerialMonitor.println(sendtoserver);
-  
-
-
-//   StaticJsonBuffer<40> jsonBuffer; 
-//  JsonObject& object = jsonBuffer.createObject();
-//  object.set("Lat",tinyGPS.location.lat());
-//  object.set("Long",tinyGPS.location.lng());
-////  String times=String(hour())+":"+String(minute())+":"+String(second());
-////  object.set("Time",times);
-//  String sendtoserver;
-//  object.prettyPrintTo(sendtoserver);
-//  SerialMonitor.println(sendtoserver);
-
-//   if(tinyGPS.location.isUpdated()){
-//     previous = millis(); 
-//  StaticJsonBuffer<200> jsonBuffer; 
-//  JsonObject& object = jsonBuffer.createObject();
-//  mySIM.listen();
-//  object.set("Lat",tinyGPS.location.lat());
-////  object.set("Long",tinyGPS.location.lng());
-////  String times=String(hour())+":"+String(minute())+":"+String(second());
-////  object.set("Time",times);
-//// object.set("Speed",tinyGPS.speed.kmph());
-// object.printTo(SerialMonitor);
-//
-//  String sendtoserver;
-//  object.prettyPrintTo(sendtoserver);
-//    Serial.println(sendtoserver);
-//  delay(4000);
+ char buffers[100];
+ serializeJson(jsonBuffer, buffers);
+  SerialMonitor.println(buffers);
   mySIM.listen();
   mySIM.println("AT+HTTPINIT");
   delay(1000); 
-  mySIM.println("AT+HTTPDATA=" + String(sendtoserver.length()) + ",4000");
+  mySIM.println("AT+HTTPDATA=100,4000");
   delay(1000);
-  mySIM.println(sendtoserver);
+  mySIM.println(buffers);
   waitUntilResponse("OK");
   mySIM.println("AT+HTTPACTION=1");
   delay(1000);
@@ -381,7 +355,7 @@ void loop(){
   gpsPort.listen();
    
   }
-   Serial.println(10 - int((millis() - previous)/1000.0));
+   Serial.println(30 - int((millis() - previous)/1000.0));
   printGPSInfo();
   smartDelay(1000);
   oled.setCursor(0, 0);
@@ -435,13 +409,7 @@ void loop(){
 void printGPSInfo()
 {
 
-//  SerialMonitor.print(tinyGPS.location.lat(), 6);
-//  SerialMonitor.print(",");
-//  SerialMonitor.print(tinyGPS.location.lng(), 6);
-//  SerialMonitor.print(",");
-//  SerialMonitor.print(tinyGPS.course.deg());
-//  SerialMonitor.print(",");
-//  SerialMonitor.println("");
+
   oled.print("1)Lat: "); oled.println(tinyGPS.location.lat(), 6);
   oled.print("2)Long: "); oled.println(tinyGPS.location.lng(), 6);
   oled.print("3)Date: "); printDate();
